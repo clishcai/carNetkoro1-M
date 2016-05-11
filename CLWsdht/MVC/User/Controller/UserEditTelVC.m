@@ -8,6 +8,8 @@
 
 #import "UserEditTelVC.h"
 #import "UserInfo.h"
+#import "LoginViewController.h"
+//#import "ViewController.h"
 
 @interface UserEditTelVC ()
 {
@@ -155,7 +157,7 @@
     NSString *urlStr = [NSString stringWithFormat:@"%@%@",BASEURL,k_url_get_code];
     
     NSDictionary *paramDict = @{
-                                @"mobile":self.txtTel.text,
+                                @"mobile":ApplicationDelegate.userInfo.Mobile,
                                 @"codeType":@"0"
                                 };
     
@@ -173,7 +175,7 @@
                 
             } else if([status isEqualToString:@"1"]) {
                 code =jsonDic[@"Message"];
-                //[SVProgressHUD showErrorWithStatus:jsonDic[@"Message"]];
+                [SVProgressHUD showSuccessWithStatus: @"验证码发送成功"];
             }
             
         } else {
@@ -204,6 +206,7 @@
                                 @"usrType":@"0"
                                 };
     
+    NSLog(@"1:[%@][%@][%@]",self.txtCode.text,ApplicationDelegate.userInfo.Mobile,self.txtTel.text);
     [ApplicationDelegate.httpManager POST:urlStr parameters:paramDict progress:^(NSProgress * _Nonnull uploadProgress) {
     } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
         //http请求状态
@@ -214,8 +217,33 @@
             if ([status isEqualToString:@"1"]) {
                 //成功返回
                 code =nil;//清空验证码
-                [SVProgressHUD showSuccessWithStatus:jsonDic[@"Message"]];
-                [self.navigationController popViewControllerAnimated:true];//返回上一级页
+                [SVProgressHUD showSuccessWithStatus:@"手机号修改成功,请重新登录"];
+                
+                //提示
+                //初始化提示框；
+                UIAlertController *alert = [UIAlertController  alertControllerWithTitle:@"提示" message:@"手机号修改成功,请重新登录" preferredStyle:  UIAlertControllerStyleAlert];
+                
+                [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                    //点击按钮的响应事件；
+                    
+                     //重新登录
+                    [[NSUserDefaults standardUserDefaults]  removeObjectForKey:k_UD_username];
+                    [[NSUserDefaults standardUserDefaults]  removeObjectForKey:k_UD_password];
+                    [[NSUserDefaults standardUserDefaults] synchronize];
+                    ApplicationDelegate.isLogin = NO ;
+                    UIStoryboard *sb = [UIStoryboard storyboardWithName:@"Login" bundle:nil];
+                    LoginViewController *vc = [sb instantiateViewControllerWithIdentifier:@"LoginViewController"];
+                    vc.ifAllowAutoLogin = false;
+                    self.hidesBottomBarWhenPushed = YES;
+                    [self.navigationController pushViewController:vc animated:YES];
+                    self.hidesBottomBarWhenPushed = NO;
+                }]];
+                
+                //弹出提示框；
+                [self presentViewController:alert animated:true completion:nil];
+               
+                
+                //[self.navigationController popViewControllerAnimated:true];//返回上一级页
                 
             } else {
                 //code =jsonDic[@"Message"];
